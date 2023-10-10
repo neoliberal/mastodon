@@ -27,7 +27,7 @@ const initialState = ImmutableMap({
     shared_state : false,
   }),
   collapsed : ImmutableMap({
-    enabled     : true,
+    enabled     : false,
     auto        : ImmutableMap({
       all              : false,
       notifications    : true,
@@ -55,10 +55,10 @@ const initialState = ImmutableMap({
     tab_badge     : true,
   }),
   status_icons : ImmutableMap({
-    language:   true,
+    language:   false,
     reply:      true,
     local_only: true,
-    media:      true,
+    media:      false,
     visibility: true,
   }),
 });
