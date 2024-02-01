@@ -1,4 +1,3 @@
-//  Package imports.
 import PropTypes from 'prop-types';
 
 import { defineMessages, injectIntl } from 'react-intl';
@@ -9,10 +8,18 @@ import { connect } from 'react-redux';
 
 import Toggle from 'react-toggle';
 
-
-//  Components.
+import AttachFileIcon from '@/material-icons/400-24px/attach_file.svg?react';
+import BrushIcon from '@/material-icons/400-24px/brush.svg?react';
+import CodeIcon from '@/material-icons/400-24px/code.svg?react';
+import DescriptionIcon from '@/material-icons/400-24px/description.svg?react';
+import GifBoxIcon from '@/material-icons/400-24px/gif_box.svg?react';
+import InsertChartIcon from '@/material-icons/400-24px/insert_chart.svg?react';
+import MarkdownIcon from '@/material-icons/400-24px/markdown.svg?react';
+import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
+import UploadFileIcon from '@/material-icons/400-24px/upload_file.svg?react';
 import { IconButton } from 'flavours/glitch/components/icon_button';
 import { pollLimits } from 'flavours/glitch/initial_state';
+
 
 import DropdownContainer from '../containers/dropdown_container';
 import LanguageDropdown from '../containers/language_dropdown_container';
@@ -20,11 +27,6 @@ import PrivacyDropdownContainer from '../containers/privacy_dropdown_container';
 
 import TextIconButton from './text_icon_button';
 
-
-
-//  Utils.
-
-//  Messages.
 const messages = defineMessages({
   advanced_options_icon_title: {
     defaultMessage: 'Advanced options',
@@ -134,18 +136,17 @@ class ComposerOptions extends ImmutablePureComponent {
     advancedOptions: ImmutablePropTypes.map,
     disabled: PropTypes.bool,
     allowMedia: PropTypes.bool,
-    allowPoll: PropTypes.bool,
     hasPoll: PropTypes.bool,
     intl: PropTypes.object.isRequired,
-    onChangeAdvancedOption: PropTypes.func,
-    onChangeContentType: PropTypes.func,
-    onTogglePoll: PropTypes.func,
-    onDoodleOpen: PropTypes.func,
-    onEmbedTenor: PropTypes.func,
-    onModalClose: PropTypes.func,
-    onModalOpen: PropTypes.func,
+    onChangeAdvancedOption: PropTypes.func.isRequired,
+    onChangeContentType: PropTypes.func.isRequired,
+    onTogglePoll: PropTypes.func.isRequired,
+    onDoodleOpen: PropTypes.func.isRequired,
+    onEmbedTenor: PropTypes.func.isRequired,
+    onModalClose: PropTypes.func.isRequired,
+    onModalOpen: PropTypes.func.isRequired,
     onToggleSpoiler: PropTypes.func,
-    onUpload: PropTypes.func,
+    onUpload: PropTypes.func.isRequired,
     contentType: PropTypes.string,
     resetFileKey: PropTypes.number,
     spoiler: PropTypes.bool,
@@ -153,20 +154,17 @@ class ComposerOptions extends ImmutablePureComponent {
     isEditing: PropTypes.bool,
   };
 
-  //  Handles file selection.
   handleChangeFiles = ({ target: { files } }) => {
     const { onUpload } = this.props;
-    if (files.length && onUpload) {
+    if (files.length) {
       onUpload(files);
     }
   };
 
-  //  Handles attachment clicks.
   handleClickAttach = (name) => {
     const { fileElement } = this;
     const { onDoodleOpen, onEmbedTenor } = this.props;
 
-    //  We switch over the name of the option.
     switch (name) {
     case 'upload':
       if (fileElement) {
@@ -174,9 +172,7 @@ class ComposerOptions extends ImmutablePureComponent {
       }
       return;
     case 'doodle':
-      if (onDoodleOpen) {
-        onDoodleOpen();
-      }
+      onDoodleOpen();
       return;
     case 'gif':
       if (onEmbedTenor) {
@@ -186,7 +182,6 @@ class ComposerOptions extends ImmutablePureComponent {
     }
   };
 
-  //  Handles a ref to the file input.
   handleRefFileElement = (fileElement) => {
     this.fileElement = fileElement;
   };
@@ -198,7 +193,6 @@ class ComposerOptions extends ImmutablePureComponent {
     return <ToggleOption name={name} text={text} meta={meta} onChangeAdvancedOption={onChangeAdvancedOption} />;
   };
 
-  //  Rendering.
   render () {
     const {
       acceptContentTypes,
@@ -206,7 +200,6 @@ class ComposerOptions extends ImmutablePureComponent {
       contentType,
       disabled,
       allowMedia,
-      allowPoll,
       hasPoll,
       onChangeAdvancedOption,
       onChangeContentType,
@@ -222,16 +215,19 @@ class ComposerOptions extends ImmutablePureComponent {
     const contentTypeItems = {
       plain: {
         icon: 'file-text',
+        iconComponent: DescriptionIcon,
         name: 'text/plain',
         text: formatMessage(messages.plain),
       },
       html: {
         icon: 'code',
+        iconComponent: CodeIcon,
         name: 'text/html',
         text: formatMessage(messages.html),
       },
       markdown: {
         icon: 'arrow-circle-down',
+        iconComponent: MarkdownIcon,
         name: 'text/markdown',
         text: formatMessage(messages.markdown),
       },
@@ -253,19 +249,23 @@ class ComposerOptions extends ImmutablePureComponent {
         <DropdownContainer
           disabled={disabled || !allowMedia}
           icon='paperclip'
+          iconComponent={AttachFileIcon}
           items={[
             {
               icon: 'cloud-upload',
+              iconComponent: UploadFileIcon,
               name: 'upload',
               text: formatMessage(messages.upload),
             },
             {
               icon: 'paint-brush',
+              iconComponent: BrushIcon,
               name: 'doodle',
               text: formatMessage(messages.doodle),
             },
             {
-              icon: 'file-image-o',
+              icon: 'gif-box',
+              iconComponent: GifBoxIcon,
               name: 'gif',
               text: formatMessage(messages.gif),
             }
@@ -276,8 +276,9 @@ class ComposerOptions extends ImmutablePureComponent {
         {!!pollLimits && (
           <IconButton
             active={hasPoll}
-            disabled={disabled || !allowPoll}
+            disabled={disabled}
             icon='tasks'
+            iconComponent={InsertChartIcon}
             inverted
             onClick={onTogglePoll}
             size={18}
@@ -288,12 +289,12 @@ class ComposerOptions extends ImmutablePureComponent {
             title={formatMessage(hasPoll ? messages.remove_poll : messages.add_poll)}
           />
         )}
-        <hr />
         <PrivacyDropdownContainer disabled={disabled || isEditing} />
         {showContentTypeChoice && (
           <DropdownContainer
             disabled={disabled}
             icon={(contentTypeItems[contentType.split('/')[1]] || {}).icon}
+            iconComponent={(contentTypeItems[contentType.split('/')[1]] || {}).iconComponent}
             items={[
               contentTypeItems.plain,
               contentTypeItems.html,
@@ -307,7 +308,7 @@ class ComposerOptions extends ImmutablePureComponent {
         {onToggleSpoiler && (
           <TextIconButton
             active={spoiler}
-            ariaControls='glitch.composer.spoiler.input'
+            ariaControls='cw-spoiler-input'
             label='CW'
             onClick={onToggleSpoiler}
             title={formatMessage(messages.spoiler)}
@@ -317,6 +318,7 @@ class ComposerOptions extends ImmutablePureComponent {
         <DropdownContainer
           disabled={disabled || isEditing}
           icon='ellipsis-h'
+          iconComponent={MoreHorizIcon}
           items={advancedOptions ? [
             {
               meta: formatMessage(messages.local_only_long),
