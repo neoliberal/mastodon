@@ -47,19 +47,19 @@
  * @property {string} version
  * @property {number} visible_reactions
  * @property {string} sso_redirect
- * @property {boolean} translation_enabled
  * @property {string} status_page_url
  * @property {boolean} system_emoji_font
  * @property {string} default_content_type
  */
 
-/** @type {string} */
-const initialPath = document.querySelector("head meta[name=initialPath]")?.getAttribute("content") ?? '';
-/** @type {boolean} */
-export const hasMultiColumnPath = initialPath === '/'
-  || initialPath === '/getting-started'
-  || initialPath === '/home'
-  || initialPath.startsWith('/deck');
+/**
+ * @typedef Role
+ * @property {string} id
+ * @property {string} name
+ * @property {string} permissions
+ * @property {string} color
+ * @property {boolean} highlighted
+ */
 
 /**
  * @typedef InitialState
@@ -67,8 +67,8 @@ export const hasMultiColumnPath = initialPath === '/'
  * @property {InitialStateLanguage[]} languages
  * @property {boolean=} critical_updates_pending
  * @property {InitialStateMeta} meta
+ * @property {Role?} role
  * @property {object} local_settings
- * @property {number} max_toot_chars
  * @property {number} max_feed_hashtags
  * @property {number} poll_limits
  * @property {number} max_reactions
@@ -77,6 +77,14 @@ export const hasMultiColumnPath = initialPath === '/'
 const element = document.getElementById('initial-state');
 /** @type {InitialState | undefined} */
 const initialState = element?.textContent && JSON.parse(element.textContent);
+
+/** @type {string} */
+const initialPath = document.querySelector("head meta[name=initialPath]")?.getAttribute("content") ?? '';
+/** @type {boolean} */
+export const hasMultiColumnPath = initialPath === '/'
+  || initialPath === '/getting-started'
+  || initialPath === '/home'
+  || initialPath.startsWith('/deck');
 
 // Glitch-soc-specific “local settings”
 if (initialState) {
@@ -124,7 +132,6 @@ export const source_url = getMeta('source_url');
 export const timelinePreview = getMeta('timeline_preview');
 export const title = getMeta('title');
 export const trendsAsLanding = getMeta('trends_as_landing_page');
-export const unfollowModal = getMeta('unfollow_modal');
 export const useBlurhash = getMeta('use_blurhash');
 export const usePendingItems = getMeta('use_pending_items');
 export const version = getMeta('version');
@@ -135,11 +142,17 @@ export const statusPageUrl = getMeta('status_page_url');
 export const sso_redirect = getMeta('sso_redirect');
 
 // Glitch-soc-specific settings
-export const maxChars = (initialState && initialState.max_toot_chars) || 500;
 export const maxFeedHashtags = (initialState && initialState.max_feed_hashtags) || 4;
 export const favouriteModal = getMeta('favourite_modal');
 export const pollLimits = (initialState && initialState.poll_limits);
 export const defaultContentType = getMeta('default_content_type');
 export const useSystemEmojiFont = getMeta('system_emoji_font');
+
+/**
+ * @returns {string | undefined}
+ */
+export function getAccessToken() {
+  return getMeta('access_token');
+}
 
 export default initialState;

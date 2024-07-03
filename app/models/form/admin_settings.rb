@@ -38,7 +38,6 @@ class Form::AdminSettings
     noindex
     outgoing_spoilers
     require_invite_text
-    captcha_enabled
     media_cache_retention_period
     content_cache_retention_period
     backups_retention_period
@@ -47,6 +46,8 @@ class Form::AdminSettings
     authorized_fetch
     reject_pattern
     reject_blurhash
+    app_icon
+    favicon
   ).freeze
 
   INTEGER_KEYS = %i(
@@ -77,6 +78,8 @@ class Form::AdminSettings
   UPLOAD_KEYS = %i(
     thumbnail
     mascot
+    app_icon
+    favicon
   ).freeze
 
   PSEUDO_KEYS = %i(
