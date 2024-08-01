@@ -223,6 +223,7 @@ vi:
         update_custom_emoji: Cập nhật emoji
         update_domain_block: Cập nhật máy chủ chặn
         update_ip_block: Cập nhật chặn IP
+        update_report: Cập nhật báo cáo
         update_status: Cập nhật tút
         update_user_role: Cập nhật vai trò
       actions:
@@ -462,6 +463,9 @@ vi:
       title: Gợi ý theo dõi
       unsuppress: Mở lại gợi ý theo dõi
     instances:
+      audit_log:
+        title: Kiểm duyệt gần đây
+        view_all: Xem lịch sử đầy đủ
       availability:
         description_html:
           other: Nếu chuyển đến tên miền <strong>%{count} ngày</strong> mà không thành công, không chuyển gì nữa cho tới khi sự tiếp nhận <em>từ</em> máy chủ được nhận.
@@ -626,6 +630,7 @@ vi:
       report: 'Báo cáo #%{id}'
       reported_account: Tài khoản bị báo cáo
       reported_by: Báo cáo bởi
+      reported_with_application: Báo cáo bằng ứng dụng
       resolved: Đã xong
       resolved_msg: Đã xử lý báo cáo xong!
       skip_to_actions: Kiểm duyệt

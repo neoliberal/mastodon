@@ -1,6 +1,6 @@
 This is a minimal fork of Chuckya (TheEssem/mastodon) used on [mastodo.neoliber.al](https://mastodo.neoliber.al). The upstream readmes are preserved below
 
-# <img src="https://github.com/TheEssem/mastodon/raw/main/public/chuckya.png" width="128"> Chuckya
+# <img src="https://github.com/TheEssem/mastodon/raw/main/public/chuckya.svg" width="128"> Chuckya
 
 Chuckya is a close-to-upstream soft fork of Mastodon Glitch Edition (more commonly known as glitch-soc) that aims to introduce more experimental features/fixes with the goal of making the overall experience more enjoyable. Although it's mainly developed for and used on the [wetdry.world](https://wetdry.world) instance, it can be deployed by any server admin as a drop-in, backwards-compatible replacement for Mastodon.
 
@@ -8,7 +8,7 @@ Here are some of the changes compared to glitch-soc:
 
 - Emoji reactions (glitch-soc/mastodon#2462)
 - Tenor GIF picker (originally from [koyu.space](https://github.com/koyuspace/mastodon))
-- Mastodon Modern theme (licensed under CC-BY-SA 4.0, [original repo](https://codeberg.org/Freeplay/Mastodon-Modern))
+- Mastodon Modern theme (licensed under CC-BY-SA 4.0, [original repo](https://git.gay/freeplay/Mastodon-Modern))
 - Workaround for OpenGraph video embeds when using [Jortage](https://jortage.com)
 - Multiple fixes for oEmbed/OpenGraph embeds
 - Polls can be posted alongside media (glitch-soc/mastodon#2524)
