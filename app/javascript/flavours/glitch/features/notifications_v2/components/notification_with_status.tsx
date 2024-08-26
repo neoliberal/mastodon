@@ -18,7 +18,7 @@ import { Icon } from 'flavours/glitch/components/icon';
 import Status from 'flavours/glitch/containers/status_container';
 import { useAppSelector, useAppDispatch } from 'flavours/glitch/store';
 
-import { NamesList } from './names_list';
+import { DisplayedName } from './displayed_name';
 import type { LabelRenderer } from './notification_group_with_status';
 
 export const NotificationWithStatus: React.FC<{
@@ -26,7 +26,7 @@ export const NotificationWithStatus: React.FC<{
   icon: IconProp;
   iconId: string;
   accountIds: string[];
-  statusId: string;
+  statusId: string | undefined;
   count: number;
   labelRenderer: LabelRenderer;
   unread: boolean;
@@ -43,10 +43,7 @@ export const NotificationWithStatus: React.FC<{
   const dispatch = useAppDispatch();
 
   const label = useMemo(
-    () =>
-      labelRenderer({
-        name: <NamesList accountIds={accountIds} total={count} />,
-      }),
+    () => labelRenderer(<DisplayedName accountIds={accountIds} />, count),
     [labelRenderer, accountIds, count],
   );
 
@@ -79,6 +76,8 @@ export const NotificationWithStatus: React.FC<{
     }),
     [dispatch, statusId],
   );
+
+  if (!statusId) return null;
 
   return (
     <HotKeys handlers={handlers}>
