@@ -394,17 +394,6 @@ class Status extends ImmutablePureComponent {
 
     let media, statusAvatar, prepend, rebloggedByText;
 
-    if (hidden) {
-      return (
-        <HotKeys handlers={handlers} tabIndex={unfocusable ? null : -1}>
-          <div ref={this.handleRef} className={classNames('status__wrapper', { focusable: !this.props.muted })} tabIndex={unfocusable ? null : 0}>
-            <span>{status.getIn(['account', 'display_name']) || status.getIn(['account', 'username'])}</span>
-            <span>{status.get('content')}</span>
-          </div>
-        </HotKeys>
-      );
-    }
-
     const connectUp = previousId && previousId === status.get('in_reply_to_id');
     const connectToRoot = rootId && rootId === status.get('in_reply_to_id');
     const connectReply = nextInReplyToId && nextInReplyToId === status.get('id');
@@ -444,12 +433,26 @@ class Status extends ImmutablePureComponent {
       );
     }
 
+    const expanded = (!matchedFilters || this.state.showDespiteFilter) && (!status.get('hidden') || status.get('spoiler_text').length === 0);
+
+    if (hidden) {
+      return (
+        <HotKeys handlers={handlers} tabIndex={unfocusable ? null : -1}>
+          <div ref={this.handleRef} className={classNames('status__wrapper', { focusable: !this.props.muted })} tabIndex={unfocusable ? null : 0}>
+            <span>{status.getIn(['account', 'display_name']) || status.getIn(['account', 'username'])}</span>
+            {status.get('spoiler_text').length > 0 && (<span>{status.get('spoiler_text')}</span>)}
+            {expanded && <span>{status.get('content')}</span>}
+          </div>
+        </HotKeys>
+      );
+    }
+
     if (pictureInPicture.get('inUse')) {
       media = <PictureInPicturePlaceholder aspectRatio={this.getAttachmentAspectRatio()} />;
     } else if (status.get('media_attachments').size > 0) {
       const language = status.getIn(['translation', 'language']) || status.get('language');
 
-      if (['image', 'gifv'].includes(status.getIn(['media_attachments', 0, 'type'])) || status.get('media_attachments').size > 1) {
+      if (['image', 'gifv', 'unknown'].includes(status.getIn(['media_attachments', 0, 'type'])) || status.get('media_attachments').size > 1) {
         media = (
           <Bundle fetchComponent={MediaGallery} loading={this.renderLoadingMediaGallery}>
             {Component => (
@@ -538,7 +541,6 @@ class Status extends ImmutablePureComponent {
     }
 
     const {statusContentProps, hashtagBar} = getHashtagBarForStatus(status);
-    const expanded = (!matchedFilters || this.state.showDespiteFilter) && (!status.get('hidden') || status.get('spoiler_text').length === 0);
 
     return (
       <HotKeys handlers={handlers} tabIndex={unfocusable ? null : -1}>
