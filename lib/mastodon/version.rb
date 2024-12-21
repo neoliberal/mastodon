@@ -46,6 +46,7 @@ module Mastodon
     def api_versions
       {
         mastodon: 2,
+        chuckya: 1,
       }
     end
 
@@ -68,6 +69,10 @@ module Mastodon
       else
         source_base_url
       end
+    end
+
+    def source_commit
+      ENV.fetch('SOURCE_COMMIT', nil)
     end
 
     def user_agent
