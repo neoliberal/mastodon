@@ -7,8 +7,8 @@ class REST::StatusSerializer < ActiveModel::Serializer
 
   attributes :id, :created_at, :in_reply_to_id, :in_reply_to_account_id,
              :sensitive, :spoiler_text, :visibility, :language,
-             :uri, :url, :replies_count, :reblogs_count,
-             :favourites_count, :edited_at, :conversation_id
+             :uri, :url, :replies_count, :reblogs_count, :media_attachments,
+             :favourites_count, :reactions_count, :edited_at, :conversation_id
 
   attribute :favourited, if: :current_user?
   attribute :reblogged, if: :current_user?
@@ -26,11 +26,10 @@ class REST::StatusSerializer < ActiveModel::Serializer
   belongs_to :application, if: :show_application?
   belongs_to :account, serializer: REST::AccountSerializer
 
-  has_many :ordered_media_attachments, key: :media_attachments, serializer: REST::MediaAttachmentSerializer
   has_many :ordered_mentions, key: :mentions
   has_many :tags
   has_many :emojis, serializer: REST::CustomEmojiSerializer
-  has_many :reactions, serializer: REST::ReactionSerializer
+  has_many :reactions, serializer: REST::StatusReactionSerializer
 
   has_one :preview_card, key: :card, serializer: REST::PreviewCardSerializer
   has_one :preloadable_poll, key: :poll, serializer: REST::PollSerializer
@@ -94,6 +93,10 @@ class REST::StatusSerializer < ActiveModel::Serializer
 
   def favourites_count
     object.untrusted_favourites_count || relationships&.attributes_map&.dig(object.id, :favourites_count) || object.favourites_count
+  end
+
+  def reactions_count
+    relationships&.attributes_map&.dig(object.id, :reactions_count) || object.reactions_count
   end
 
   def favourited
@@ -160,7 +163,15 @@ class REST::StatusSerializer < ActiveModel::Serializer
   end
 
   def reactions
-    object.reactions(current_user&.account&.id)
+    if relationships && current_user?
+      relationships.reactions_map[object.id] || []
+    else
+      object.reactions(current_user&.account&.id)
+    end
+  end
+
+  def media_attachments
+    ActiveModel::SerializableResource.new(object.ordered_media_attachments, each_serializer: REST::MediaAttachmentSerializer, discord_hack: instance_options[:discord_hack])
   end
 
   private

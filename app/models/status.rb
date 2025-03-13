@@ -29,6 +29,7 @@
 #  edited_at                    :datetime
 #  trendable                    :boolean
 #  ordered_media_attachment_ids :bigint(8)        is an Array
+#  fetched_replies_at           :datetime
 #
 
 class Status < ApplicationRecord
@@ -36,6 +37,7 @@ class Status < ApplicationRecord
   include Discard::Model
   include Paginable
   include RateLimitable
+  include Status::FetchRepliesConcern
   include Status::SafeReblogInsert
   include Status::SearchConcern
   include Status::SnapshotConcern
@@ -283,7 +285,7 @@ class Status < ApplicationRecord
   def reactions(account_id = nil)
     grouped_ordered_status_reactions.select(
       [:name, :custom_emoji_id, 'COUNT(*) as count'].tap do |values|
-        values << value_for_reaction_me_column(account_id)
+        values << StatusReaction.value_for_reaction_me_column(account_id)
       end
     ).to_a.tap do |records|
       ActiveRecord::Associations::Preloader.new(records: records, associations: :custom_emoji).call
@@ -315,6 +317,10 @@ class Status < ApplicationRecord
 
   def favourites_count
     status_stat&.favourites_count || 0
+  end
+
+  def reactions_count
+    status_stat&.reactions_count || 0
   end
 
   # Reblogs count received from an external instance
@@ -473,27 +479,6 @@ class Status < ApplicationRecord
       .order(
         Arel.sql('MIN(created_at)').asc
       )
-  end
-
-  def value_for_reaction_me_column(account_id)
-    if account_id.nil?
-      'FALSE AS me'
-    else
-      <<~SQL.squish
-        EXISTS(
-          SELECT 1
-          FROM status_reactions inner_reactions
-          WHERE inner_reactions.account_id = #{account_id}
-            AND inner_reactions.status_id = status_reactions.status_id
-            AND inner_reactions.name = status_reactions.name
-            AND (
-              inner_reactions.custom_emoji_id = status_reactions.custom_emoji_id
-              OR inner_reactions.custom_emoji_id IS NULL
-                AND status_reactions.custom_emoji_id IS NULL
-            )
-        ) AS me
-      SQL
-    end
   end
 
   def update_status_stat!(attrs)
