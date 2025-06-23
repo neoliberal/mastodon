@@ -8,11 +8,9 @@ Here are some of the changes compared to glitch-soc:
 
 - Emoji reactions (glitch-soc/mastodon#2462)
 - Bubble timeline
-- Tenor GIF picker (originally from [koyu.space](https://github.com/koyuspace/mastodon))
+- Tenor GIF picker (originally from [koyu.space](https://github.com/koyuspace/mastodon), rewritten for Chuckya)
 - Mastodon Modern theme (licensed under CC-BY-SA 4.0, [original repo](https://git.gay/freeplay/Mastodon-Modern))
-- Workaround for OpenGraph video embeds when using [Jortage](https://jortage.com)
 - Configurable media attachment limits
-- Multiple fixes for oEmbed/OpenGraph embeds
 - Polls can be posted alongside media (glitch-soc/mastodon#2524)
 - Polls can have only one option
 - Restores status trend half-life to 2 hours
@@ -103,10 +101,10 @@ Mastodon is a **free, open-source social network server** based on ActivityPub w
 
 ### Requirements
 
-- **PostgreSQL** 12+
-- **Redis** 4+
+- **PostgreSQL** 13+
+- **Redis** 6.2+
 - **Ruby** 3.2+
-- **Node.js** 18+
+- **Node.js** 20+
 
 The repository includes deployment configurations for **Docker and docker-compose** as well as specific platforms like **Heroku**, and **Scalingo**. For Helm charts, reference the [mastodon/chart repository](https://github.com/mastodon/chart). The [**standalone** installation guide](https://docs.joinmastodon.org/admin/install/) is available in the documentation.
 
@@ -123,12 +121,12 @@ accepted into Mastodon, you can request to be paid through our [OpenCollective].
 
 ## License
 
-Copyright (c) 2016-2024 Eugen Rochko (+ [`mastodon authors`](AUTHORS.md))
+Copyright (c) 2016-2025 Eugen Rochko (+ [`mastodon authors`](AUTHORS.md))
 
 Licensed under GNU Affero General Public License as stated in the [LICENSE](LICENSE):
 
 ```
-Copyright (c) 2016-2024 Eugen Rochko & other Mastodon contributors
+Copyright (c) 2016-2025 Eugen Rochko & other Mastodon contributors
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free

@@ -22,7 +22,15 @@ class EmojiFormatter
   def to_s
     return html if custom_emojis.empty? || html.blank?
 
-    tree = Nokogiri::HTML5.fragment(html)
+    begin
+      tree = Nokogiri::HTML5.fragment(html)
+    rescue ArgumentError
+      # This can happen if one of the Nokogumbo limits is encountered
+      # Unfortunately, it does not use a more precise error class
+      # nor allows more graceful handling
+      return ''
+    end
+
     tree.xpath('./text()|.//text()[not(ancestor[@class="invisible"])]').to_a.each do |node|
       i                     = -1
       inside_shortname      = false
@@ -36,11 +44,11 @@ class EmojiFormatter
 
         if inside_shortname && text[i] == ':'
           inside_shortname = false
-          shortcode = text[shortname_start_index + 1..i - 1]
+          shortcode = text[(shortname_start_index + 1)..(i - 1)]
 
           next unless (emoji = emoji_map[shortcode])
 
-          result << tree.document.create_text_node(text[last_index..shortname_start_index - 1]) if shortname_start_index.positive?
+          result << tree.document.create_text_node(text[last_index..(shortname_start_index - 1)]) if shortname_start_index.positive?
           result << tree.document.fragment(tag_for_emoji(shortcode, emoji))
 
           last_index = i + 1

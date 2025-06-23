@@ -4,7 +4,7 @@ module RoutingHelper
   extend ActiveSupport::Concern
 
   include ActionView::Helpers::AssetTagHelper
-  include Webpacker::Helper
+  include ViteRails::TagHelpers
 
   included do
     include Rails.application.routes.url_helpers
@@ -14,16 +14,25 @@ module RoutingHelper
     end
   end
 
-  def redirect_asset_url(source)
-    Request.new(:head, source, follow: false).perform do |res|
-      res.code == 301 ? res.headers['location'] : source
-    end
-  end
-
   def full_asset_url(source, **)
     source = ActionController::Base.helpers.asset_url(source, **) unless use_storage?
 
     URI.join(asset_host, source).to_s
+  end
+
+  def expiring_asset_url(attachment, expires_in)
+    case Paperclip::Attachment.default_options[:storage]
+    when :s3, :azure
+      attachment.expiring_url(expires_in.to_i)
+    when :fog
+      if Paperclip::Attachment.default_options.dig(:fog_credentials, :openstack_temp_url_key).present?
+        attachment.expiring_url(expires_in.from_now)
+      else
+        full_asset_url(attachment.url)
+      end
+    when :filesystem
+      full_asset_url(attachment.url)
+    end
   end
 
   def asset_host
@@ -31,7 +40,7 @@ module RoutingHelper
   end
 
   def frontend_asset_path(source, **)
-    asset_pack_path("media/#{source}", **)
+    vite_asset_path(source, **)
   end
 
   def frontend_asset_url(source, **)

@@ -5,7 +5,6 @@
   "about.fork_disclaimer": "Glitch-soc is free open source software forked from Mastodon.",
   "account.disclaimer_full": "Information below may reflect the user's profile incompletely.",
   "account.follows": "Follows",
-  "account.follows_you": "Follows you",
   "account.suspended_disclaimer_full": "This user has been suspended by a moderator.",
   "account.view_full_profile": "View full profile",
   "boost_modal.missing_description": "This toot contains some media without description",
@@ -48,6 +47,10 @@
   "federation.local_only.short": "Local-only",
   "firehose.bubble": "Bubble servers",
   "firehose.column_settings.allow_local_only": "Show local-only posts in \"All\"",
+  "gif_search.error": "Oops! Something went wrong. Please, try again.",
+  "gif_search.loading": "Loading...",
+  "gif_search.nomatches": "No matches found.",
+  "gif_search.search": "Search for GIFs",
   "home.column_settings.advanced": "Advanced",
   "home.column_settings.filter_regex": "Filter out by regular expressions",
   "home.column_settings.show_direct": "Show private mentions",
@@ -79,6 +82,8 @@
   "settings.content_warnings_unfold_opts": "Auto-unfolding options",
   "settings.deprecated_setting": "This setting is now controlled from Mastodon's {settings_page_link}",
   "settings.enable_content_warnings_auto_unfold": "Automatically unfold content-warnings",
+  "settings.fullwidth_view": "Stretch columns to full width (Desktop mode only)",
+  "settings.fullwidth_view_hint": "Stretches columns to fill all the available space.",
   "settings.general": "General",
   "settings.hicolor_privacy_icons": "High color privacy icons",
   "settings.hicolor_privacy_icons.hint": "Display privacy icons in bright and easily distinguishable colors",
@@ -139,9 +144,5 @@
   "status.react": "React",
   "status.reactions": "{count, plural, one {reaction} other {reactions}}",
   "status.reactions.empty": "No one has reacted to this post yet. When someone does, they will show up here.",
-  "status.show_filter_reason": "Show anyway",
-  "tenor.error": "Oops! Something went wrong. Please, try again.",
-  "tenor.loading": "Loading...",
-  "tenor.nomatches": "No matches found.",
-  "tenor.search": "Search for GIFs"
+  "status.show_filter_reason": "Show anyway"
 }
