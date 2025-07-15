@@ -23,7 +23,7 @@ export function CommunityTimeline () {
 }
 
 export function BubbleTimeline () {
-  return import(/* webpackChunkName: "flavours/glitch/async/bubble_timeline" */'../../bubble_timeline');
+  return import('../../bubble_timeline');
 }
 
 export function Firehose () {
@@ -52,10 +52,6 @@ export function Status () {
 
 export function GettingStarted () {
   return import('../../getting_started');
-}
-
-export function GettingStartedMisc () {
-  return import('../../getting_started_misc');
 }
 
 export function KeyboardShortcuts () {
@@ -95,7 +91,7 @@ export function Favourites () {
 }
 
 export function Reactions () {
-  return import(/* webpackChunkName: "flavours/glitch/async/reactions" */'../../reactions');
+  return import('../../reactions');
 }
 
 export function FollowRequests () {
