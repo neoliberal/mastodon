@@ -115,10 +115,16 @@ Rails.application.routes.draw do
       resource :inbox, only: [:create]
       resources :collections, only: [:show]
       resource :followers_synchronization, only: [:show]
+      resources :quote_authorizations, only: [:show]
     end
   end
 
   resource :inbox, only: [:create], module: :activitypub
+  resources :contexts, only: [:show], module: :activitypub, constraints: { id: /[0-9]+-[0-9]+/ } do
+    member do
+      get :items
+    end
+  end
 
   constraints(encoded_path: /%40.*/) do
     get '/:encoded_path', to: redirect { |params|

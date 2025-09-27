@@ -2,14 +2,15 @@
 
 class ActivityPub::NoteSerializer < ActivityPub::Serializer
   include FormattingHelper
+  include JsonLdHelper
 
-  context_extensions :atom_uri, :conversation, :sensitive, :voters_count, :direct_message
+  context_extensions :atom_uri, :conversation, :sensitive, :voters_count, :quotes, :interaction_policies, :direct_message
 
   attributes :id, :type, :summary,
              :in_reply_to, :published, :url,
              :attributed_to, :to, :cc, :sensitive,
              :atom_uri, :in_reply_to_atom_uri,
-             :conversation
+             :conversation, :context
 
   attribute :content
   attribute :content_map, if: :language?
@@ -31,6 +32,13 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
   attribute :closed, if: :poll_and_expired?
 
   attribute :voters_count, if: :poll_and_voters_count?
+
+  attribute :quote, if: :quote?
+  attribute :quote, key: :_misskey_quote, if: :quote?
+  attribute :quote, key: :quote_uri, if: :quote?
+  attribute :quote_authorization, if: :quote_authorization?
+
+  attribute :interaction_policy
 
   def id
     raise Mastodon::NotPermittedError, 'Local-only statuses should not be serialized' if object.local_only? && !instance_options[:allow_local_only]
@@ -164,8 +172,16 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
     if object.conversation.uri?
       object.conversation.uri
     else
-      OStatus::TagManager.instance.unique_tag(object.conversation.created_at, object.conversation.id, 'Conversation')
+      # This means `parent_status_id` and `parent_account_id` must *not* get backfilled
+      ActivityPub::TagManager.instance.uri_for(object.conversation) || OStatus::TagManager.instance.unique_tag(object.conversation.created_at, object.conversation.id, 'Conversation')
     end
+  end
+
+  def context
+    return if object.conversation.nil?
+
+    uri = ActivityPub::TagManager.instance.uri_for(object.conversation)
+    uri unless unsupported_uri_scheme?(uri)
   end
 
   def local?
@@ -204,6 +220,40 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
 
   def poll_and_voters_count?
     object.preloadable_poll&.voters_count
+  end
+
+  def quote?
+    object.quote&.present?
+  end
+
+  def quote_authorization?
+    object.quote.present? && ActivityPub::TagManager.instance.approval_uri_for(object.quote).present?
+  end
+
+  def quote
+    # TODO: handle inlining self-quotes
+    ActivityPub::TagManager.instance.uri_for(object.quote.quoted_status)
+  end
+
+  def quote_authorization
+    ActivityPub::TagManager.instance.approval_uri_for(object.quote)
+  end
+
+  def interaction_policy
+    approved_uris = []
+
+    # On outgoing posts, only automatic approval is supported
+    policy = object.quote_approval_policy >> 16
+    approved_uris << ActivityPub::TagManager::COLLECTIONS[:public] if policy.anybits?(Status::QUOTE_APPROVAL_POLICY_FLAGS[:public])
+    approved_uris << ActivityPub::TagManager.instance.followers_uri_for(object.account) if policy.anybits?(Status::QUOTE_APPROVAL_POLICY_FLAGS[:followers])
+    approved_uris << ActivityPub::TagManager.instance.following_uri_for(object.account) if policy.anybits?(Status::QUOTE_APPROVAL_POLICY_FLAGS[:following])
+    approved_uris << ActivityPub::TagManager.instance.uri_for(object.account) if approved_uris.empty?
+
+    {
+      canQuote: {
+        automaticApproval: approved_uris,
+      },
+    }
   end
 
   class MediaAttachmentSerializer < ActivityPub::Serializer

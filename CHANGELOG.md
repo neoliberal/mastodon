@@ -2,6 +2,76 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.4.4] - 2025-09-16
+
+### Security
+
+- Update dependencies
+
+### Fixed
+
+- Fix missing memoization in `Web::PushNotificationWorker` (#36085 by @ClearlyClaire)
+- Fix unresponsive areas around GIFV modals in some cases (#36059 by @ClearlyClaire)
+- Fix missing `beforeUnload` confirmation when a poll is being authored (#36030 by @ClearlyClaire)
+- Fix processing of remote edited statuses with new media and no text (#35970 by @unfokus)
+- Fix polls not being displayed in moderation interface (#35644 and #35933 by @ThisIsMissEm)
+- Fix WebUI handling of deleted quoted posts (#35909 and #35918 by @ClearlyClaire and @diondiondion)
+- Fix “Edit” and “Delete & Redraft” on a poll not inserting empty option (#35892 by @ClearlyClaire)
+- Fix loading of some compatibility CSS on some configurations (#35876 by @shleeable)
+- Fix HttpLog not being enabled with `RAILS_LOG_LEVEL=debug` (#35833 by @mjankowski)
+- Fix self-destruct scheduler behavior on some Redis setups (#35823 by @ClearlyClaire)
+- Fix `tootctl admin create` not bypassing reserved username checks (#35779 by @ClearlyClaire)
+- Fix interaction policy changes in implicit updates not being saved (#35751 by @ClearlyClaire)
+- Fix quote revocation not being streamed (#35710 by @ClearlyClaire)
+- Fix export of large user archives by enabling Zip64 (#35850 by @ClearlyClaire)
+
+### Changed
+
+- Change labels for quote policy settings (#35893 by @ClearlyClaire)
+- Change standalone “Share” page to redirect to web interface after posting (#35763 by @ChaosExAnima)
+
+## [4.4.3] - 2025-08-05
+
+### Security
+
+- Update dependencies
+- Fix incorrect rate-limit handling [GHSA-84ch-6436-c7mg](https://github.com/mastodon/mastodon/security/advisories/GHSA-84ch-6436-c7mg)
+
+### Fixed
+
+- Fix race condition caused by ActiveRecord query cache in `Create` critical path (#35662 by @ClearlyClaire)
+- Fix race condition caused by quote post processing (#35657 by @ClearlyClaire)
+- Fix WebUI crashing for accounts with `null` URL (#35651 by @ClearlyClaire)
+- Fix friends-of-friends recommendations suggesting already-requested accounts (#35604 by @ClearlyClaire)
+- Fix synchronous recursive fetching of deeply-nested quoted posts (#35600 by @ClearlyClaire)
+- Fix “Expand this post” link including user `@undefined` (#35478 by @ClearlyClaire)
+
+### Changed
+
+- Change `StatusReachFinder` to consider quotes as well as reblogs (#35601 by @ClearlyClaire)
+- Add restrictions on which quote posts can trend (#35507 by @ClearlyClaire)
+- Change quote verification to not bypass authorization flow for mentions (#35528 by @ClearlyClaire)
+
+## [4.4.2] - 2025-07-23
+
+### Security
+
+- Update dependencies
+
+### Fixed
+
+- Fix menu not clickable in Firefox (#35390 and #35414 by @diondiondion)
+- Add `lang` attribute to current composer language in alt text modal (#35412 by @diondiondion)
+- Fix quote posts styling on notifications page (#35411 by @diondiondion)
+- Improve a11y of custom select menus in notifications settings (#35403 by @diondiondion)
+- Fix selected item in poll select menus is unreadable in Firefox (#35402 by @diondiondion)
+- Update age limit wording (#35387 by @diondiondion)
+- Fix support for quote verification in implicit status updates (#35384 by @ClearlyClaire)
+- Improve `Dropdown` component accessibility (#35373 by @diondiondion)
+- Fix processing some incoming quotes failing because of missing JSON-LD context (#35354 and #35380 by @ClearlyClaire)
+- Make bio hashtags open the local page instead of the remote instance (#35349 by @ChaosExAnima)
+- Fix styling of external log-in button (#35320 by @ClearlyClaire)
+
 ## [4.4.1] - 2025-07-09
 
 ### Fixed
@@ -541,7 +611,6 @@ The following changelog entries focus on changes visible to users, administrator
   You can now separately filter or drop notifications from people you don't follow, people who don't follow you, accounts created within the past 30 days, as well as unsolicited private mentions, and accounts limited by the moderation.\
   Instead of being outright dropped, notifications that you chose to filter are put in a separate “Filtered notifications” box that you can review separately without it clogging your main notifications.\
   This adds the following REST API endpoints:
-
   - `GET /api/v2/notifications/policy`: https://docs.joinmastodon.org/methods/notifications/#get-policy
   - `PATCH /api/v2/notifications/policy`: https://docs.joinmastodon.org/methods/notifications/#update-the-filtering-policy-for-notifications
   - `GET /api/v1/notifications/requests`: https://docs.joinmastodon.org/methods/notifications/#get-requests
@@ -553,7 +622,6 @@ The following changelog entries focus on changes visible to users, administrator
   - `GET /api/v1/notifications/requests/merged`: https://docs.joinmastodon.org/methods/notifications/#requests-merged
 
   In addition, accepting one or more notification requests generates a new streaming event:
-
   - `notifications_merged`: an event of this type indicates accepted notification requests have finished merging, and the notifications list should be refreshed
 
 - **Add notifications of severed relationships** (#27511, #29665, #29668, #29670, #29700, #29714, #29712, and #29731 by @ClearlyClaire and @Gargron)\
