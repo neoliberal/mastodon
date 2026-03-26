@@ -8,7 +8,6 @@ import ImmutablePropTypes from 'react-immutable-proptypes';
 import ImmutablePureComponent from 'react-immutable-pure-component';
 import { connect } from 'react-redux';
 
-import AddReactionIcon from '@/material-icons/400-24px/add_reaction.svg?react';
 import BookmarkIcon from '@/material-icons/400-24px/bookmark-fill.svg?react';
 import BookmarkBorderIcon from '@/material-icons/400-24px/bookmark.svg?react';
 import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
@@ -24,12 +23,13 @@ import { WithRouterPropTypes } from 'flavours/glitch/utils/react_router';
 
 import { Dropdown } from 'flavours/glitch/components/dropdown_menu';
 import EmojiPickerDropdown from '../../features/compose/containers/emoji_picker_dropdown_container';
-import { me, maxReactions } from '../../initial_state';
+import { me, maxReactions, quickBoosting } from '../../initial_state';
 
 import { IconButton } from '../icon_button';
 import { RelativeTimestamp } from '../relative_timestamp';
 import { BoostButton } from '../status/boost_button';
 import { RemoveQuoteHint } from './remove_quote_hint';
+import { quoteItemState, selectStatusState } from '../status/boost_button_utils';
 
 const messages = defineMessages({
   delete: { id: 'status.delete', defaultMessage: 'Delete' },
@@ -44,7 +44,6 @@ const messages = defineMessages({
   more: { id: 'status.more', defaultMessage: 'More' },
   replyAll: { id: 'status.replyAll', defaultMessage: 'Reply to thread' },
   favourite: { id: 'status.favourite', defaultMessage: 'Favorite' },
-  react: { id: 'status.react', defaultMessage: 'React' },
   removeFavourite: { id: 'status.remove_favourite', defaultMessage: 'Remove from favorites' },
   bookmark: { id: 'status.bookmark', defaultMessage: 'Bookmark' },
   removeBookmark: { id: 'status.remove_bookmark', defaultMessage: 'Remove bookmark' },
@@ -71,6 +70,7 @@ const mapStateToProps = (state, { status }) => {
   const quotedStatusId = status.getIn(['quote', 'quoted_status']);
   return ({
     quotedAccountId: quotedStatusId ? state.getIn(['statuses', quotedStatusId, 'account']) : null,
+    statusQuoteState: selectStatusState(state, status),
   });
 };
 
@@ -78,6 +78,7 @@ class StatusActionBar extends ImmutablePureComponent {
   static propTypes = {
     identity: identityContextPropShape,
     status: ImmutablePropTypes.map.isRequired,
+    statusQuoteState: PropTypes.object,
     quotedAccountId: PropTypes.string,
     contextType: PropTypes.string,
     onReply: PropTypes.func,
@@ -122,8 +123,12 @@ class StatusActionBar extends ImmutablePureComponent {
     if (signedIn) {
       this.props.onReply(this.props.status);
     } else {
-      this.props.onInteractionModal(this.props.status);
+      this.props.onInteractionModal(this.props.status, 'reply');
     }
+  };
+
+  handleQuoteClick = () => {
+    this.props.onQuote(this.props.status);
   };
 
   handleShareClick = () => {
@@ -140,7 +145,7 @@ class StatusActionBar extends ImmutablePureComponent {
     if (signedIn) {
       this.props.onFavourite(this.props.status, e);
     } else {
-      this.props.onInteractionModal(this.props.status);
+      this.props.onInteractionModal(this.props.status, 'favourite');
     }
   };
 
@@ -222,7 +227,7 @@ class StatusActionBar extends ImmutablePureComponent {
   };
 
   render () {
-    const { status, quotedAccountId, contextType, intl, withDismiss, withCounters, showReplyCount, scrollKey } = this.props;
+    const { status, statusQuoteState, quotedAccountId, contextType, intl, withDismiss, withCounters, showReplyCount, scrollKey } = this.props;
     const { signedIn, permissions } = this.props.identity;
 
     const publicStatus       = ['public', 'unlisted'].includes(status.get('visibility'));
@@ -249,6 +254,19 @@ class StatusActionBar extends ImmutablePureComponent {
 
     if (publicStatus && !isRemote) {
       menu.push({ text: intl.formatMessage(messages.embed), action: this.handleEmbed });
+    }
+
+    if (quickBoosting && signedIn) {
+      const quoteItem = quoteItemState(statusQuoteState);
+      menu.push(null);
+      menu.push({
+        text: intl.formatMessage(quoteItem.title),
+        description: quoteItem.meta
+          ? intl.formatMessage(quoteItem.meta)
+          : undefined,
+        disabled: quoteItem.disabled,
+        action: this.handleQuoteClick,
+      });
     }
 
     if (signedIn) {
@@ -353,7 +371,7 @@ class StatusActionBar extends ImmutablePureComponent {
           <IconButton className='status__action-bar-button star-icon' animate active={status.get('favourited')} title={favouriteTitle} icon='star' iconComponent={status.get('favourited') ? StarIcon : StarBorderIcon} onClick={this.handleFavouriteClick} counter={withCounters ? status.get('favourites_count') : undefined} />
         </div>
         <div className='status__action-bar__button-wrapper'>
-          <EmojiPickerDropdown className='status__action-bar-button react-icon' onPickEmoji={this.handleEmojiPick} title={intl.formatMessage(messages.react)} icon={AddReactionIcon} disabled={!canReact} counter={withCounters ? status.get('reactions_count') : undefined} />
+          <EmojiPickerDropdown className='status__action-bar-button react-icon' onPickEmoji={this.handleEmojiPick} react={true} disabled={!canReact} counter={withCounters ? status.get('reactions_count') : undefined} />
         </div>
         <div className='status__action-bar__button-wrapper'>
           <IconButton className='status__action-bar-button bookmark-icon' disabled={!signedIn} active={status.get('bookmarked')} title={bookmarkTitle} icon='bookmark' iconComponent={status.get('bookmarked') ? BookmarkIcon : BookmarkBorderIcon} onClick={this.handleBookmarkClick} />
@@ -366,17 +384,23 @@ class StatusActionBar extends ImmutablePureComponent {
             <Dropdown
               scrollKey={scrollKey}
               status={status}
+              needsStatusRefresh={quickBoosting && status.get('quote_approval') === null}
               items={menu}
-              icon='ellipsis-h'
               size={18}
-              iconComponent={MoreHorizIcon}
               direction='right'
               ariaLabel={intl.formatMessage(messages.more)}
               onOpen={() => {
                 dismissQuoteHint();
                 return true;
               }}
-            />
+            >
+              <IconButton
+                className='status__action-bar__button'
+                icon='ellipsis-h'
+                iconComponent={MoreHorizIcon}
+                title={intl.formatMessage(messages.more)}
+              />
+            </Dropdown>
           )}
         </RemoveQuoteHint>
 

@@ -63,6 +63,34 @@ RSpec.describe ActivityPub::ProcessAccountService do
     end
   end
 
+  context 'with collection URIs' do
+    let(:payload) do
+      {
+        'id' => 'https://foo.test',
+        'type' => 'Actor',
+        'inbox' => 'https://foo.test/inbox',
+        'featured' => 'https://foo.test/featured',
+        'followers' => 'https://foo.test/followers',
+        'following' => 'https://foo.test/following',
+        'featuredCollections' => 'https://foo.test/featured_collections',
+      }
+    end
+
+    before do
+      stub_request(:get, %r{^https://foo\.test/follow})
+        .to_return(status: 200, body: '', headers: {})
+    end
+
+    it 'parses and sets the URIs' do
+      account = subject.call('alice', 'example.com', payload)
+
+      expect(account.featured_collection_url).to eq 'https://foo.test/featured'
+      expect(account.followers_url).to eq 'https://foo.test/followers'
+      expect(account.following_url).to eq 'https://foo.test/following'
+      expect(account.collections_url).to eq 'https://foo.test/featured_collections'
+    end
+  end
+
   context 'with attribution domains' do
     let(:payload) do
       {
@@ -269,6 +297,49 @@ RSpec.describe ActivityPub::ProcessAccountService do
       expect { subject.call('user1', 'foo.test', payload) }
         .to create_some_remote_accounts
         .and create_fewer_than_rate_limit_accounts
+    end
+  end
+
+  context 'with interaction policy' do
+    let(:payload) do
+      {
+        id: 'https://foo.test',
+        type: 'Actor',
+        inbox: 'https://foo.test/inbox',
+        followers: 'https://foo.test/followers',
+        following: 'https://foo.test/following',
+        interactionPolicy: {
+          canFeature: {
+            automaticApproval: 'https://foo.test',
+            manualApproval: [
+              'https://foo.test/followers',
+              'https://foo.test/following',
+            ],
+          },
+        },
+      }.with_indifferent_access
+    end
+
+    before do
+      stub_request(:get, %r{^https://foo\.test/follow})
+        .to_return(status: 200, body: '', headers: {})
+    end
+
+    # TODO: Remove when feature flag is removed
+    context 'when collections feature is disabled' do
+      it 'does not set the interaction policy' do
+        account = subject.call('user1', 'foo.test', payload)
+
+        expect(account.feature_approval_policy).to be_zero
+      end
+    end
+
+    context 'when collections feature is enabled', feature: :collections do
+      it 'sets the interaction policy to the correct value' do
+        account = subject.call('user1', 'foo.test', payload)
+
+        expect(account.feature_approval_policy).to eq 0b100000000000000001100
+      end
     end
   end
 

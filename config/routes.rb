@@ -12,7 +12,7 @@ class RedirectWithVary < ActionDispatch::Routing::PathRedirect
 end
 
 def redirect_with_vary(path)
-  RedirectWithVary.new(301, path)
+  RedirectWithVary.new(301, path, caller(1..1).first)
 end
 
 Rails.application.routes.draw do
@@ -95,7 +95,21 @@ Rails.application.routes.draw do
 
   get '/authorize_follow', to: redirect { |_, request| "/authorize_interaction?#{request.params.to_query}" }
 
-  resources :accounts, path: 'users', only: [:show], param: :username do
+  concern :account_resources do
+    resources :collections, only: [:show], constraints: { id: /\d+/ }
+    resources :followers, only: [:index], controller: :follower_accounts
+    resources :following, only: [:index], controller: :following_accounts
+
+    scope module: :activitypub do
+      resource :outbox, only: [:show]
+      resource :inbox, only: [:create]
+      resources :collections, only: [:show], as: :actor_collections, constraints: { id: Regexp.union(ActivityPub::CollectionsController::SUPPORTED_COLLECTIONS) }
+      resource :followers_synchronization, only: [:show]
+      resources :quote_authorizations, only: [:show]
+    end
+  end
+
+  resources :accounts, path: 'users', only: [:show], param: :username, concerns: :account_resources do
     resources :statuses, only: [:show] do
       member do
         get :activity
@@ -106,16 +120,23 @@ Rails.application.routes.draw do
       resources :likes, only: [:index], module: :activitypub
       resources :shares, only: [:index], module: :activitypub
     end
+  end
 
-    resources :followers, only: [:index], controller: :follower_accounts
-    resources :following, only: [:index], controller: :following_accounts
+  scope path: 'ap', as: 'ap' do
+    resources :accounts, path: 'users', only: [:show], param: :id, concerns: :account_resources do
+      resources :collection_items, only: [:show]
+      resources :feature_authorizations, only: [:show], module: :activitypub
+      resources :featured_collections, only: [:index], module: :activitypub
 
-    scope module: :activitypub do
-      resource :outbox, only: [:show]
-      resource :inbox, only: [:create]
-      resources :collections, only: [:show]
-      resource :followers_synchronization, only: [:show]
-      resources :quote_authorizations, only: [:show]
+      resources :statuses, only: [:show] do
+        member do
+          get :activity
+        end
+
+        resources :replies, only: [:index], module: :activitypub
+        resources :likes, only: [:index], module: :activitypub
+        resources :shares, only: [:index], module: :activitypub
+      end
     end
   end
 
@@ -147,6 +168,7 @@ Rails.application.routes.draw do
     get '/@:account_username/followers', to: 'follower_accounts#index'
     get '/@:account_username/:id', to: 'statuses#show', as: :short_account_status
     get '/@:account_username/:id/embed', to: 'statuses#embed', as: :embed_short_account_status
+    get '/@:account_username/wrapstodon/:year/:share_key', to: 'wrapstodon#show', as: :public_wrapstodon
   end
 
   get '/@:username_with_domain/(*any)', to: 'home#index', constraints: { username_with_domain: %r{([^/])+?} }, as: :account_with_domain, format: false

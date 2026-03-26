@@ -5,32 +5,32 @@
 # Table name: statuses
 #
 #  id                           :bigint(8)        not null, primary key
-#  uri                          :string
-#  text                         :text             default(""), not null
-#  created_at                   :datetime         not null
-#  updated_at                   :datetime         not null
-#  in_reply_to_id               :bigint(8)
-#  reblog_of_id                 :bigint(8)
-#  url                          :string
-#  sensitive                    :boolean          default(FALSE), not null
-#  visibility                   :integer          default("public"), not null
-#  spoiler_text                 :text             default(""), not null
-#  reply                        :boolean          default(FALSE), not null
-#  language                     :string
-#  conversation_id              :bigint(8)
-#  local                        :boolean
-#  account_id                   :bigint(8)        not null
-#  application_id               :bigint(8)
-#  in_reply_to_account_id       :bigint(8)
-#  local_only                   :boolean
-#  poll_id                      :bigint(8)
 #  content_type                 :string
 #  deleted_at                   :datetime
 #  edited_at                    :datetime
-#  trendable                    :boolean
-#  ordered_media_attachment_ids :bigint(8)        is an Array
 #  fetched_replies_at           :datetime
+#  language                     :string
+#  local                        :boolean
+#  local_only                   :boolean
+#  ordered_media_attachment_ids :bigint(8)        is an Array
 #  quote_approval_policy        :integer          default(0), not null
+#  reply                        :boolean          default(FALSE), not null
+#  sensitive                    :boolean          default(FALSE), not null
+#  spoiler_text                 :text             default(""), not null
+#  text                         :text             default(""), not null
+#  trendable                    :boolean
+#  uri                          :string
+#  url                          :string
+#  visibility                   :integer          default("public"), not null
+#  created_at                   :datetime         not null
+#  updated_at                   :datetime         not null
+#  account_id                   :bigint(8)        not null
+#  application_id               :bigint(8)
+#  conversation_id              :bigint(8)
+#  in_reply_to_account_id       :bigint(8)
+#  in_reply_to_id               :bigint(8)
+#  poll_id                      :bigint(8)
+#  reblog_of_id                 :bigint(8)
 #
 
 class Status < ApplicationRecord
@@ -94,6 +94,7 @@ class Status < ApplicationRecord
   has_many :local_favorited, -> { merge(Account.local) }, through: :favourites, source: :account
   has_many :local_reblogged, -> { merge(Account.local) }, through: :reblogs, source: :account
   has_many :local_bookmarked, -> { merge(Account.local) }, through: :bookmarks, source: :account
+  has_many :local_replied, -> { merge(Account.local) }, through: :replies, source: :account
 
   has_and_belongs_to_many :tags # rubocop:disable Rails/HasAndBelongsToMany
 
@@ -141,6 +142,7 @@ class Status < ApplicationRecord
   scope :tagged_with_none, lambda { |tag_ids|
     where('NOT EXISTS (SELECT * FROM statuses_tags forbidden WHERE forbidden.status_id = statuses.id AND forbidden.tag_id IN (?))', tag_ids)
   }
+  scope :without_empty_attachments, -> { where(ordered_media_attachment_ids: nil).or(where.not(ordered_media_attachment_ids: [])) }
 
   scope :not_local_only, -> { where(local_only: [false, nil]) }
 
@@ -165,6 +167,7 @@ class Status < ApplicationRecord
   around_create Mastodon::Snowflake::Callbacks
 
   after_create :set_poll_id
+  after_create :update_conversation
 
   # The `prepend: true` option below ensures this runs before
   # the `dependent: destroy` callbacks remove relevant records
@@ -398,19 +401,19 @@ class Status < ApplicationRecord
 
       # _from_me part does not require any timeline filters
       query_from_me = where(account_id: account.id)
-                      .direct_visibility
-                      .limit(limit)
-                      .order(id: :desc)
+        .direct_visibility
+        .limit(limit)
+        .order(id: :desc)
 
       # _to_me part requires mute and block filter.
       # FIXME: may we check mutes.hide_notifications?
       query_to_me = Status
-                    .direct_visibility
-                    .joins(:mentions)
-                    .where(mentions: { account_id: account.id })
-                    .limit(limit)
-                    .order('mentions.status_id DESC')
-                    .not_excluded_by_account(account)
+        .direct_visibility
+        .joins(:mentions)
+        .where(mentions: { account_id: account.id })
+        .limit(limit)
+        .order('mentions.status_id DESC')
+        .not_excluded_by_account(account)
 
       if max_id.present?
         query_from_me = query_from_me.where(id: ...max_id)
@@ -428,7 +431,7 @@ class Status < ApplicationRecord
     end
 
     def favourites_map(status_ids, account_id)
-      Favourite.select(:status_id).where(status_id: status_ids).where(account_id: account_id).each_with_object({}) { |f, h| h[f.status_id] = true }
+      Favourite.select(:status_id).where(status_id: status_ids).where(account_id: account_id).to_h { |f| [f.status_id, true] }
     end
 
     def bookmarks_map(status_ids, account_id)
@@ -436,15 +439,15 @@ class Status < ApplicationRecord
     end
 
     def reblogs_map(status_ids, account_id)
-      unscoped.select(:reblog_of_id).where(reblog_of_id: status_ids).where(account_id: account_id).each_with_object({}) { |s, h| h[s.reblog_of_id] = true }
+      unscoped.select(:reblog_of_id).where(reblog_of_id: status_ids).where(account_id: account_id).to_h { |s| [s.reblog_of_id, true] }
     end
 
     def mutes_map(conversation_ids, account_id)
-      ConversationMute.select(:conversation_id).where(conversation_id: conversation_ids).where(account_id: account_id).each_with_object({}) { |m, h| h[m.conversation_id] = true }
+      ConversationMute.select(:conversation_id).where(conversation_id: conversation_ids).where(account_id: account_id).to_h { |m| [m.conversation_id, true] }
     end
 
     def pins_map(status_ids, account_id)
-      StatusPin.select(:status_id).where(status_id: status_ids).where(account_id: account_id).each_with_object({}) { |p, h| h[p.status_id] = true }
+      StatusPin.select(:status_id).where(status_id: status_ids).where(account_id: account_id).to_h { |p| [p.status_id, true] }
     end
 
     def from_text(text)
@@ -528,7 +531,13 @@ class Status < ApplicationRecord
   def set_local_only
     return unless account.domain.nil? && !attribute_changed?(:local_only)
 
-    self.local_only = marked_local_only?
+    self.local_only = true if thread&.local_only? && local_only.nil?
+
+    if reblog?
+      self.local_only = reblog.local_only
+    elsif local_only.nil?
+      self.local_only = marked_local_only?
+    end
   end
 
   def set_conversation
@@ -540,9 +549,14 @@ class Status < ApplicationRecord
       self.in_reply_to_account_id = carried_over_reply_to_account_id
       self.conversation_id        = thread.conversation_id if conversation_id.nil?
     elsif conversation_id.nil?
-      conversation = build_owned_conversation
-      self.conversation = conversation
+      build_conversation
     end
+  end
+
+  def update_conversation
+    return if reply?
+
+    conversation.update!(parent_status: self, parent_account: account) if conversation && conversation.parent_status.nil?
   end
 
   def carried_over_reply_to_account_id
@@ -566,7 +580,7 @@ class Status < ApplicationRecord
   def increment_counter_caches
     return if direct_visibility?
 
-    account&.increment_count!(:statuses_count)
+    account&.increment_count!(:statuses_count, status_created_at: created_at)
     reblog&.increment_count!(:reblogs_count) if reblog?
     thread&.increment_count!(:replies_count) if in_reply_to_id.present? && distributable?
   end

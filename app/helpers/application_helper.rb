@@ -113,6 +113,7 @@ module ApplicationHelper
   end
 
   def material_symbol(icon, attributes = {})
+    whitespace = attributes.delete(:whitespace) { true }
     safe_join(
       [
         inline_svg_tag(
@@ -121,7 +122,7 @@ module ApplicationHelper
           role: :img,
           data: attributes[:data]
         ),
-        ' ',
+        whitespace ? ' ' : '',
       ]
     )
   end
@@ -152,15 +153,33 @@ module ApplicationHelper
     tag.meta(content: content, property: property)
   end
 
-  def body_classes
+  def html_attributes
+    base = {
+      lang: I18n.locale,
+      class: html_classes,
+      'data-contrast': contrast.parameterize,
+      'data-color-scheme': page_color_scheme.parameterize,
+      'data-user-flavour': current_flavour.parameterize,
+    }
+
+    base[:'data-system-theme'] = 'true' if page_color_scheme == 'auto'
+
+    base
+  end
+
+  def html_classes
     output = []
-    output << content_for(:body_classes)
-    output << "flavour-#{current_flavour.parameterize}"
-    output << "skin-#{current_skin.parameterize}"
+    output << content_for(:html_classes)
     output << 'system-font' if current_account&.user&.setting_system_font_ui
     output << 'custom-scrollbars' unless current_account&.user&.setting_system_scrollbars_ui
     output << (current_account&.user&.setting_reduce_motion ? 'reduce-motion' : 'no-reduce-motion')
     output << 'rtl' if locale_direction == 'rtl'
+    output.compact_blank.join(' ')
+  end
+
+  def body_classes
+    output = []
+    output << content_for(:body_classes)
     output.compact_blank.join(' ')
   end
 
@@ -266,8 +285,8 @@ module ApplicationHelper
   end
 
   # glitch-soc addition to handle the multiple flavors
-  def flavoured_vite_typescript_tag(pack_name, **)
-    vite_typescript_tag("#{Themes.instance.flavour(current_flavour)['pack_directory'].delete_prefix('app/javascript/')}/#{pack_name}", **)
+  def flavoured_vite_typescript_tag(pack_name, flavour: nil, **)
+    vite_typescript_tag("#{Themes.instance.flavour(flavour || current_flavour)['pack_directory'].delete_prefix('app/javascript/')}/#{pack_name}", **)
   end
 
   private

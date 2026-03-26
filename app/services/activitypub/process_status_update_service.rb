@@ -20,7 +20,6 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
     @request_id                = request_id
     @quote                     = nil
 
-    # Only native types can be updated at the moment
     return @status if !expected_type? || already_updated_more_recently?
 
     if @status_parser.edited_at.present? && (@status.edited_at.nil? || @status_parser.edited_at > @status.edited_at)
@@ -74,6 +73,8 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
       update_quote_approval!
       update_counts!
     end
+
+    broadcast_updates! if @status.quote&.state_previously_changed?
   end
 
   def update_interaction_policies!
@@ -168,8 +169,8 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
   end
 
   def update_immediate_attributes!
-    @status.text         = @status_parser.text || ''
-    @status.spoiler_text = @status_parser.spoiler_text || ''
+    @status.text         = @status_parser.processed_text
+    @status.spoiler_text = @status_parser.processed_spoiler_text
     @status.sensitive    = @account.sensitized? || @status_parser.sensitive || false
     @status.language     = @status_parser.language
 
@@ -203,7 +204,11 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
 
   def update_tags!
     previous_tags = @status.tags.to_a
-    current_tags = @status.tags = Tag.find_or_create_by_names(@raw_tags)
+    current_tags = @status.tags = @raw_tags.flat_map do |tag|
+      Tag.find_or_create_by_names([tag])
+    rescue ActiveRecord::RecordInvalid
+      []
+    end.uniq
 
     return unless @status.distributable?
 
@@ -298,7 +303,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
   def update_quote!
     quote_uri = @status_parser.quote_uri
 
-    if quote_uri.present?
+    if @status_parser.quote?
       approval_uri = @status_parser.quote_approval_uri
       approval_uri = nil if unsupported_uri_scheme?(approval_uri) || TagManager.instance.local_url?(approval_uri)
 
@@ -308,7 +313,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
           # Revoke the quote while we get a chance… maybe this should be a `before_destroy` hook?
           RevokeQuoteService.new.call(@status.quote) if @status.quote.quoted_account&.local? && @status.quote.accepted?
           @status.quote.destroy
-          quote = Quote.create(status: @status, approval_uri: approval_uri, legacy: @status_parser.legacy_quote?)
+          quote = Quote.create(status: @status, approval_uri: approval_uri, legacy: @status_parser.legacy_quote?, state: @status_parser.deleted_quote? ? :deleted : :pending)
           @quote_changed = true
         else
           quote = @status.quote
@@ -349,7 +354,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
   end
 
   def expected_type?
-    equals_or_includes_any?(@json['type'], %w(Note Question))
+    equals_or_includes_any?(@json['type'], ActivityPub::Activity::SUPPORTED_TYPES) || equals_or_includes_any?(@json['type'], ActivityPub::Activity::CONVERTED_TYPES)
   end
 
   def record_previous_edit!
@@ -404,6 +409,11 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
     # expiration date, and people have voted, schedule a notification
 
     return unless poll.present? && poll.expires_at.present? && poll.votes.exists?
+
+    # If the poll had previously expired, notifications should have already been sent out (or scheduled),
+    # and re-scheduling them would cause duplicate notifications for people who had already dismissed them
+    # (see #37948)
+    return if @previous_expires_at&.past?
 
     PollExpirationNotifyWorker.remove_from_scheduled(poll.id) if @previous_expires_at.present? && @previous_expires_at > poll.expires_at
     PollExpirationNotifyWorker.perform_at(poll.expires_at + 5.minutes, poll.id)

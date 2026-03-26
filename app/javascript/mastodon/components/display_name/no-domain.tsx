@@ -2,33 +2,28 @@ import type { ComponentPropsWithoutRef, FC } from 'react';
 
 import classNames from 'classnames';
 
-import { EmojiHTML } from '@/mastodon/features/emoji/emoji_html';
-import { isModernEmojiEnabled } from '@/mastodon/utils/environment';
-
+import { AnimateEmojiProvider } from '../emoji/context';
+import { EmojiHTML } from '../emoji/html';
 import { Skeleton } from '../skeleton';
 
 import type { DisplayNameProps } from './index';
 
 export const DisplayNameWithoutDomain: FC<
-  Omit<DisplayNameProps, 'variant' | 'localDomain'> &
-    ComponentPropsWithoutRef<'span'>
-> = ({ account, className, children, ...props }) => {
+  Omit<DisplayNameProps, 'variant'> & ComponentPropsWithoutRef<'span'>
+> = ({ account, className, children, localDomain: _, ...props }) => {
   return (
-    <span
+    <AnimateEmojiProvider
       {...props}
-      className={classNames('display-name animate-parent', className)}
+      as='span'
+      className={classNames('display-name', className)}
     >
       <bdi>
         {account ? (
           <EmojiHTML
             className='display-name__html'
-            htmlString={
-              isModernEmojiEnabled()
-                ? account.get('display_name')
-                : account.get('display_name_html')
-            }
-            shallow
+            htmlString={account.get('display_name_html')}
             as='strong'
+            extraEmojis={account.get('emojis')}
           />
         ) : (
           <strong className='display-name__html'>
@@ -37,6 +32,6 @@ export const DisplayNameWithoutDomain: FC<
         )}
       </bdi>
       {children}
-    </span>
+    </AnimateEmojiProvider>
   );
 };

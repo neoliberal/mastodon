@@ -10,9 +10,9 @@ import ImmutablePropTypes from 'react-immutable-proptypes';
 import { supportsPassiveEvents } from 'detect-passive-events';
 import Overlay from 'react-overlays/Overlay';
 
+import AddReactionIcon from '@/material-icons/400-24px/add_reaction.svg?react';
 import MoodIcon from '@/material-icons/400-20px/mood.svg?react';
 import { IconButton } from 'flavours/glitch/components/icon_button';
-import { useSystemEmojiFont } from 'flavours/glitch/initial_state';
 
 import { buildCustomEmojis, categoriesFromEmojis } from '../../emoji/emoji';
 import { EmojiPicker as EmojiPickerAsync } from '../../ui/util/async-components';
@@ -31,6 +31,7 @@ const messages = defineMessages({
   objects: { id: 'emoji_button.objects', defaultMessage: 'Objects' },
   symbols: { id: 'emoji_button.symbols', defaultMessage: 'Symbols' },
   flags: { id: 'emoji_button.flags', defaultMessage: 'Flags' },
+  react: { id: 'status.react', defaultMessage: 'React' },
 });
 
 let EmojiPicker, Emoji; // load asynchronously
@@ -62,8 +63,14 @@ class ModifierPickerMenu extends PureComponent {
     this.props.onSelect(e.currentTarget.getAttribute('data-index') * 1);
   };
 
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    if (nextProps.active) {
+  componentDidMount() {
+    if (this.props.active) {
+      this.attachListeners();
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.props.active) {
       this.attachListeners();
     } else {
       this.removeListeners();
@@ -99,12 +106,12 @@ class ModifierPickerMenu extends PureComponent {
 
     return (
       <div className='emoji-picker-dropdown__modifiers__menu' style={{ display: active ? 'block' : 'none' }} ref={this.setRef}>
-        <button type='button' onClick={this.handleClick} data-index={1}><Emoji emoji='fist' size={22} skin={1} native={useSystemEmojiFont} /></button>
-        <button type='button' onClick={this.handleClick} data-index={2}><Emoji emoji='fist' size={22} skin={2} native={useSystemEmojiFont} /></button>
-        <button type='button' onClick={this.handleClick} data-index={3}><Emoji emoji='fist' size={22} skin={3} native={useSystemEmojiFont} /></button>
-        <button type='button' onClick={this.handleClick} data-index={4}><Emoji emoji='fist' size={22} skin={4} native={useSystemEmojiFont} /></button>
-        <button type='button' onClick={this.handleClick} data-index={5}><Emoji emoji='fist' size={22} skin={5} native={useSystemEmojiFont} /></button>
-        <button type='button' onClick={this.handleClick} data-index={6}><Emoji emoji='fist' size={22} skin={6} native={useSystemEmojiFont} /></button>
+        <button type='button' onClick={this.handleClick} data-index={1}><Emoji emoji='fist' size={22} skin={1} /></button>
+        <button type='button' onClick={this.handleClick} data-index={2}><Emoji emoji='fist' size={22} skin={2} /></button>
+        <button type='button' onClick={this.handleClick} data-index={3}><Emoji emoji='fist' size={22} skin={3} /></button>
+        <button type='button' onClick={this.handleClick} data-index={4}><Emoji emoji='fist' size={22} skin={4} /></button>
+        <button type='button' onClick={this.handleClick} data-index={5}><Emoji emoji='fist' size={22} skin={5} /></button>
+        <button type='button' onClick={this.handleClick} data-index={6}><Emoji emoji='fist' size={22} skin={6} /></button>
       </div>
     );
   }
@@ -134,12 +141,12 @@ class ModifierPicker extends PureComponent {
     this.props.onClose();
   };
 
-  render () {
+  render() {
     const { active, modifier } = this.props;
 
     return (
       <div className='emoji-picker-dropdown__modifiers'>
-        <Emoji emoji='fist' size={22} skin={modifier} onClick={this.handleClick} native={useSystemEmojiFont} />
+        <Emoji emoji='fist' size={22} skin={modifier} onClick={this.handleClick} />
         <ModifierPickerMenu active={active} onSelect={this.handleSelect} onClose={this.props.onClose} />
       </div>
     );
@@ -291,7 +298,6 @@ class EmojiPickerMenuImpl extends PureComponent {
           notFound={notFoundFn}
           autoFocus={this.state.readyToFocus}
           emojiTooltip
-          native={useSystemEmojiFont}
         />
 
         <ModifierPicker
@@ -318,8 +324,7 @@ class EmojiPickerDropdown extends PureComponent {
     onPickEmoji: PropTypes.func.isRequired,
     onSkinTone: PropTypes.func.isRequired,
     skinTone: PropTypes.number.isRequired,
-    title: PropTypes.string,
-    icon: PropTypes.node,
+    react: PropTypes.bool,
     disabled: PropTypes.bool,
   };
 
@@ -383,7 +388,9 @@ class EmojiPickerDropdown extends PureComponent {
   };
 
   render() {
-    const { intl, onPickEmoji, onSkinTone, skinTone, frequentlyUsedEmojis, title, icon, disabled } = this.props;
+    const { intl, onPickEmoji, onSkinTone, skinTone, frequentlyUsedEmojis, react, disabled } = this.props;
+    const title = react ? intl.formatMessage(messages.react) : intl.formatMessage(messages.emoji);
+    const icon = react ? AddReactionIcon : MoodIcon;
     const { active, loading, placement } = this.state;
 
     return (
@@ -392,9 +399,10 @@ class EmojiPickerDropdown extends PureComponent {
           title={title || intl.formatMessage(messages.emoji)}
           aria-expanded={active}
           active={active}
-          disabled={disabled}
-          iconComponent={icon || MoodIcon}
+          iconComponent={icon}
           onClick={this.onToggle}
+          disabled={disabled}
+          id="emoji"
         />
 
         <Overlay show={active} placement={placement} flip target={this.findTarget} popperConfig={{ strategy: 'fixed', onFirstUpdate: this.handleOverlayEnter }}>

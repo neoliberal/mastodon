@@ -8,7 +8,8 @@ class REST::AccountSerializer < ActiveModel::Serializer
 
   attributes :id, :username, :acct, :display_name, :locked, :bot, :discoverable, :indexable, :group, :created_at,
              :note, :url, :uri, :avatar, :avatar_static, :avatar_description, :header, :header_static, :header_description,
-             :followers_count, :following_count, :statuses_count, :last_status_at, :hide_collections
+             :followers_count, :following_count, :statuses_count, :last_status_at, :hide_collections,
+             :show_media, :show_media_replies, :show_featured
 
   has_one :moved_to_account, key: :moved, serializer: REST::AccountSerializer, if: :moved_and_not_nested?
 
@@ -20,6 +21,8 @@ class REST::AccountSerializer < ActiveModel::Serializer
   attribute :noindex, if: :local?
 
   attribute :memorial, if: :memorial?
+
+  attribute :feature_approval, if: -> { Mastodon::Feature.collections_enabled? }
 
   class AccountDecorator < SimpleDelegator
     def self.model_name
@@ -189,5 +192,13 @@ class REST::AccountSerializer < ActiveModel::Serializer
 
   def show_rationale_for_user?
     Setting.show_domain_blocks_rationale == 'users' && current_user? && current_user.functional_or_moved?
+  end
+
+  def feature_approval
+    {
+      automatic: object.feature_policy_as_keys(:automatic),
+      manual: object.feature_policy_as_keys(:manual),
+      current_user: object.feature_policy_for_account(current_user&.account),
+    }
   end
 end

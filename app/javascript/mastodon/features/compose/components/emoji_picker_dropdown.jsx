@@ -61,8 +61,14 @@ class ModifierPickerMenu extends PureComponent {
     this.props.onSelect(e.currentTarget.getAttribute('data-index') * 1);
   };
 
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    if (nextProps.active) {
+  componentDidMount() {
+    if (this.props.active) {
+      this.attachListeners();
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.props.active) {
       this.attachListeners();
     } else {
       this.removeListeners();
@@ -316,6 +322,7 @@ class EmojiPickerDropdown extends PureComponent {
     onPickEmoji: PropTypes.func.isRequired,
     onSkinTone: PropTypes.func.isRequired,
     skinTone: PropTypes.number.isRequired,
+    disabled: PropTypes.bool,
   };
 
   state = {
@@ -378,7 +385,7 @@ class EmojiPickerDropdown extends PureComponent {
   };
 
   render() {
-    const { intl, onPickEmoji, onSkinTone, skinTone, frequentlyUsedEmojis } = this.props;
+    const { intl, onPickEmoji, onSkinTone, skinTone, frequentlyUsedEmojis, disabled } = this.props;
     const title = intl.formatMessage(messages.emoji);
     const { active, loading, placement } = this.state;
 
@@ -390,6 +397,8 @@ class EmojiPickerDropdown extends PureComponent {
           active={active}
           iconComponent={MoodIcon}
           onClick={this.onToggle}
+          disabled={disabled}
+          id="emoji"
           inverted
         />
 
