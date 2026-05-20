@@ -13,11 +13,16 @@ import { Button } from '@/flavours/glitch/components/button';
 import { DismissibleCallout } from '@/flavours/glitch/components/callout/dismissible';
 import { CustomEmojiProvider } from '@/flavours/glitch/components/emoji/context';
 import { EmojiHTML } from '@/flavours/glitch/components/emoji/html';
+import { ToggleField } from '@/flavours/glitch/components/form_fields';
 import { useElementHandledLink } from '@/flavours/glitch/components/status/handled_link';
 import { useAccount } from '@/flavours/glitch/hooks/useAccount';
 import { useCurrentAccountId } from '@/flavours/glitch/hooks/useAccountId';
+import { useCustomEmojis } from '@/flavours/glitch/hooks/useCustomEmojis';
 import { autoPlayGif } from '@/flavours/glitch/initial_state';
-import { fetchProfile } from '@/flavours/glitch/reducers/slices/profile_edit';
+import {
+  fetchProfile,
+  patchProfile,
+} from '@/flavours/glitch/reducers/slices/profile_edit';
 import { useAppDispatch, useAppSelector } from '@/flavours/glitch/store';
 
 import { AccountEditColumn, AccountEditEmptyColumn } from './components/column';
@@ -102,11 +107,15 @@ export const messages = defineMessages({
   },
   profileTabTitle: {
     id: 'account_edit.profile_tab.title',
-    defaultMessage: 'Profile tab settings',
+    defaultMessage: 'Profile display settings',
   },
   profileTabSubtitle: {
     id: 'account_edit.profile_tab.subtitle',
-    defaultMessage: 'Customize the tabs on your profile and what they display.',
+    defaultMessage: 'Customize how your profile is displayed.',
+  },
+  advancedSettingsTitle: {
+    id: 'account_edit.advanced_settings.title',
+    defaultMessage: 'Advanced settings',
   },
 });
 
@@ -117,7 +126,7 @@ export const AccountEdit: FC = () => {
 
   const dispatch = useAppDispatch();
 
-  const { profile } = useAppSelector((state) => state.profileEdit);
+  const { profile, isPending } = useAppSelector((state) => state.profileEdit);
   useEffect(() => {
     void dispatch(fetchProfile());
   }, [dispatch]);
@@ -162,8 +171,12 @@ export const AccountEdit: FC = () => {
     history.push('/profile/featured_tags');
   }, [history]);
 
+  const handleBotToggle = useCallback(() => {
+    void dispatch(patchProfile({ bot: !profile?.bot }));
+  }, [dispatch, profile?.bot]);
+
   // Normally we would use the account emoji, but we want all custom emojis to be available to render after editing.
-  const emojis = useAppSelector((state) => state.custom_emojis);
+  const emojis = useCustomEmojis();
   const htmlHandlers = useElementHandledLink({
     hashtagAccountId: profile?.id,
   });
@@ -327,6 +340,26 @@ export const AccountEdit: FC = () => {
             </Button>
           }
         />
+
+        <AccountEditSection title={messages.advancedSettingsTitle}>
+          <ToggleField
+            checked={profile.bot}
+            onChange={handleBotToggle}
+            disabled={isPending}
+            label={
+              <FormattedMessage
+                id='account_edit.advanced_settings.bot_label'
+                defaultMessage='Automated account'
+              />
+            }
+            hint={
+              <FormattedMessage
+                id='account_edit.advanced_settings.bot_hint'
+                defaultMessage='Signal to others that the account mainly performs automated actions and might not be monitored'
+              />
+            }
+          />
+        </AccountEditSection>
       </CustomEmojiProvider>
     </AccountEditColumn>
   );

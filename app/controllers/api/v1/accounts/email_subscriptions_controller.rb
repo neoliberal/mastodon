@@ -8,6 +8,8 @@ class Api::V1::Accounts::EmailSubscriptionsController < Api::BaseController
   def create
     @account.email_subscriptions.create!(email: params[:email], locale: I18n.locale)
     render_empty
+  rescue ActiveRecord::RecordInvalid => e
+    render json: ValidationErrorFormatter.new(e).as_json, status: 422
   end
 
   private
@@ -17,7 +19,7 @@ class Api::V1::Accounts::EmailSubscriptionsController < Api::BaseController
   end
 
   def require_feature_enabled!
-    head 404 unless Mastodon::Feature.email_subscriptions_enabled?
+    head 404 unless Rails.application.config.x.email_subscriptions && Setting.email_subscriptions
   end
 
   def require_account_permissions!

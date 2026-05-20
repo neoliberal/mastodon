@@ -355,12 +355,20 @@ en:
       title: Bubble
     collections:
       accounts: Accounts
+      back_to_account: Back to account page
+      back_to_report: Back to report page
+      batch:
+        add_to_report: 'Add to report #%{id}'
+        remove_from_report: Remove from report
+        report: Report
       collection_title: Collection by %{name}
       contents: Contents
+      no_collection_selected: No collections were changed as none were selected
       number_of_accounts:
         one: 1 account
         other: "%{count} accounts"
       open: Open
+      title: Account collections - @%{name}
       view_publicly: View publicly
     critical_update_pending: Critical update pending
     custom_emojis:
@@ -494,9 +502,76 @@ en:
         title: Block new email domain
       no_email_domain_block_selected: No email domain blocks were changed as none were selected
       not_permitted: Not permitted
+      reset: Reset
       resolved_dns_records_hint_html: The domain name resolves to the following MX domains, which are ultimately responsible for accepting email. Blocking an MX domain will block sign-ups from any email address which uses the same MX domain, even if the visible domain name is different. <strong>Be careful not to block major email providers.</strong>
       resolved_through_html: Resolved through %{domain}
+      search: Search
       title: Blocked email domains
+    email_subscriptions:
+      accounts:
+        account: Account
+        active: Active
+        empty:
+          hint: No accounts have subscribers yet.
+          no_lists_yet: No lists yet
+        inactive: Inactive
+        last_email: Last email
+        lead: Accounts who have enabled the feature and have subscribers will show below.
+        status: Status
+        subscribers: Subscribers
+        title: Mailing lists
+      additional_footer_texts:
+        show:
+          title: Additional footer text
+      compliance_settings:
+        additional_footer_text:
+          action: Manage
+          hint: Optional text that appears in the footer of newsletter emails only
+          title: Additional footer text
+        lead: Email newsletters may be considered marketing emails, depending on the jurisdictions where you operate.
+        privacy_policy:
+          action: Manage
+          hint: This policy is linked in the footer of every email
+          title: Privacy policy
+        title: Compliance settings
+      danger_zone:
+        disable_feature:
+          action: Disable
+          hint: Turn off feature for all accounts
+          title: Disable feature
+        erase_all_data:
+          action: Erase data
+          hint: Permanently deletes all emails in all mailing lists
+          title: Erase all data
+        title: Danger zone
+      disabled_msg: Email subscriptions have been successfully disabled.
+      index:
+        disabled:
+          cannot_be_enabled: Your technical provider has not enabled this feature for your server.
+          description: This feature allows specified accounts to add a widget to their profiles, enabling visitors without a Mastodon account to receive their posts via email.
+          get_started: Get started
+        lead: Allow visitors to receive posts via email from dedicated accounts on this server.
+        title: Email newsletters
+      purged_msg: All email subscriptions data is being erased.
+      roles:
+        accounts: Accounts
+        edit_role: Edit role
+        empty:
+          hint: No one has permission to use this feature.
+          no_roles_added: No roles added
+        lead: Accounts with the following roles can enable this feature on their profiles.
+        manage_roles: Manage roles
+        role_name: Role name
+        title: Roles
+      setups:
+        show:
+          enable_feature: Enable feature
+          important_information: Important information
+          list:
+            1_permission_explanation: When this feature is enabled, accounts with the designated permissions can add an email collection form to their profiles.
+            2_feature_explanation: When visitors sign up on an account’s profile page and confirm their subscription, they’ll begin to receive email updates when the account creates new public posts.
+            3_privacy_policy_warning: Server admins will have access to PII (email addresses) collected. As such, the privacy policy and Terms of Service for the server must be updated before using this feature.
+            4_cost_warning: Emails may incur a fee depending on hosting setup. Discuss with your hosting provider before enabling, as this feature could drastically increase the amount of emails sent from your server.
     export_domain_allows:
       new:
         title: Import domain allows
@@ -802,7 +877,7 @@ en:
         manage_custom_emojis: Manage Custom Emojis
         manage_custom_emojis_description: Allows users to manage custom emojis on the server
         manage_email_subscriptions: Manage Email Subscriptions
-        manage_email_subscriptions_description: Allow users to subscribe to users with this permission by email
+        manage_email_subscriptions_description: Allow users with this permission to enable the email newsletter feature for their account
         manage_federation: Manage Federation
         manage_federation_description: Allows users to block or allow federation with other domains, and control deliverability
         manage_invites: Manage Invites
@@ -1441,8 +1516,6 @@ en:
       your_appeal_pending: You have submitted an appeal
       your_appeal_rejected: Your appeal has been rejected
   edit_profile:
-    basic_information: Basic information
-    hint_html: "<strong>Customize what people see on your public profile and next to your posts.</strong> Other people are more likely to follow you back and interact with you when you have a filled out profile and a profile picture."
     other: Other
     redesign_body: Profile editing can now be accessed directly from the profile page.
     redesign_button: Go there
@@ -1463,11 +1536,11 @@ en:
         one: Interact with this post and discover more like it.
         other: Interact with these posts and discover more.
       subject:
-        one: 'New post: "%{excerpt}"'
-        other: New posts from %{name}
+        plural: New posts from %{name}
+        singular: 'New post: "%{excerpt}"'
       title:
-        one: 'New post: "%{excerpt}"'
-        other: New posts from %{name}
+        plural: New posts from %{name}
+        singular: 'New post: "%{excerpt}"'
   email_subscriptions:
     active: Active
     confirmations:
@@ -1517,10 +1590,8 @@ en:
     mutes: You mute
     storage: Media storage
   featured_tags:
-    add_new: Add new
     errors:
       limit: You have already featured the maximum number of hashtags
-    hint_html: "<strong>Feature your most important hashtags on your profile.</strong> A great tool for keeping track of your creative works and long-term projects, featured hashtags are displayed prominently on your profile and allow quick access to your own posts."
   filters:
     contexts:
       account: Profiles
@@ -1758,6 +1829,27 @@ en:
     copy_account_note_text: 'This user moved from %{acct}, here were your previous notes about them:'
   navigation:
     toggle_menu: Toggle menu
+  notification_fallbacks:
+    added_to_collection:
+      title_html: "%{name} added you to a collection"
+    admin_report:
+      title_html: "%{name} reported %{target}"
+    admin_sign_up:
+      title_and_others_html:
+        one: "%{name} and one other signed up"
+        other: "%{name} and %{count} others signed up"
+      title_html: "%{name} signed up"
+    collection_update:
+      title_html: "%{name} updated a collection you are in"
+    generic:
+      sign_in: Sign in to the Mastodon web app
+      summary_html: You're on an app that does not support the most recent version of Mastodon. %{link} for full functionality.
+    moderation_warning:
+      summary_html: You're on an app that does not support the most recent version of Mastodon. %{link}.
+      title: You have received a moderation warning.
+    severed_relationships:
+      summary_html: An admin from %{from} has suspended %{target}, which means you can no longer receive updates from them or interact with them. %{link} to retrieve a list of the lost relationships.
+      title: Lost connections with %{name}
   notification_mailer:
     admin:
       report:
