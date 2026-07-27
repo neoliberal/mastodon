@@ -44,15 +44,10 @@
 class User < ApplicationRecord
   self.ignored_columns += %w(
     admin
-    current_sign_in_ip
     encrypted_otp_secret
     encrypted_otp_secret_iv
     encrypted_otp_secret_salt
-    filtered_languages
-    last_sign_in_ip
     moderator
-    remember_created_at
-    remember_token
     skip_sign_in_token
   )
 
@@ -115,7 +110,7 @@ class User < ApplicationRecord
   scope :disabled, -> { where(disabled: true) }
   scope :active, -> { confirmed.signed_in_recently.account_not_suspended }
   scope :matches_email, ->(value) { where(arel_table[:email].matches("#{value}%")) }
-  scope :matches_ip, ->(value) { left_joins(:ips).merge(IpBlock.contained_by(value)).group(users: [:id]) }
+  scope :matches_ip, ->(value) { left_joins(:ips).merge(UserIp.contained_by(value)).group(users: [:id]) }
 
   before_validation :sanitize_role
   before_create :set_approved

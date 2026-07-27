@@ -63,15 +63,7 @@
 #
 
 class Account < ApplicationRecord
-  self.ignored_columns += %w(
-    devices_url
-    hub_url
-    remote_url
-    salmon_url
-    secret
-    subscription_expires_at
-    trust_level
-  )
+  self.ignored_columns += %w(devices_url)
 
   BACKGROUND_REFRESH_INTERVAL = 1.week.freeze
   REFRESH_DEADLINE = 6.hours
@@ -84,7 +76,7 @@ class Account < ApplicationRecord
   URL_PREFIX_RE = %r{\Ahttp(s?)://[^/]+}
   USERNAME_ONLY_RE = /\A#{USERNAME_RE}\z/i
   USERNAME_LENGTH_LIMIT = 30
-  DISPLAY_NAME_LENGTH_LIMIT = (ENV['MAX_DISPLAY_NAME_CHARS'] || 30).to_i
+  DISPLAY_NAME_LENGTH_LIMIT = (ENV['MAX_DISPLAY_NAME_CHARS'] || 40).to_i
   NOTE_LENGTH_LIMIT = (ENV['MAX_BIO_CHARS'] || 500).to_i
   DESCRIPTION_LENGTH_LIMIT = 1_500
 
@@ -314,8 +306,22 @@ class Account < ApplicationRecord
     strikes.where(overruled_at: nil).count
   end
 
-  def keypair
-    @keypair ||= OpenSSL::PKey::RSA.new(private_key || public_key)
+  def keypair(type: nil)
+    # Pick the first (oldest) keypair matching the expected type,
+    # as we can expect our key rotation code to add stand-by keys with higher IDs
+    # before pruning older keys with lower IDs after some time.
+
+    scope = keypairs.usable.order(id: :asc)
+    scope = scope.where(type: type) if type.present?
+
+    case type
+    when :rsa, nil
+      # The legacy key is always RSA, so only fallback
+      # when no other type is requested
+      scope.first || Keypair.from_legacy_account(self)
+    else
+      scope.first
+    end
   end
 
   def tags_as_strings=(tag_names)
@@ -496,7 +502,7 @@ class Account < ApplicationRecord
   before_destroy :clean_feed_manager
 
   def ensure_keys!
-    return unless local? && private_key.blank? && public_key.blank?
+    return unless local? && private_key.blank? && public_key.blank? && keypairs.empty?
 
     generate_keys
     save!
@@ -516,11 +522,10 @@ class Account < ApplicationRecord
   end
 
   def generate_keys
-    return unless local? && private_key.blank? && public_key.blank?
+    return unless local? && private_key.blank? && public_key.blank? && keypairs.empty?
 
     keypair = OpenSSL::PKey::RSA.new(2048)
-    self.private_key = keypair.to_pem
-    self.public_key  = keypair.public_key.to_pem
+    keypairs << keypairs.build(local_fragment: "#rsa-#{SecureRandom.hex(8)}", type: :rsa, public_key: keypair.public_key.to_pem, private_key: keypair.to_pem)
   end
 
   def normalize_domain
