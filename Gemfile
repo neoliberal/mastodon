@@ -97,7 +97,7 @@ gem 'tzinfo-data', '~> 1.2023'
 gem 'webauthn', '~> 3.0'
 gem 'webpush', github: 'mastodon/webpush', ref: '9631ac63045cfabddacc69fc06e919b4c13eb913'
 
-gem 'json'
+gem 'json', '< 3'
 gem 'json-canonicalization', '~> 1.0'
 gem 'json-ld'
 gem 'json-ld-preloaded', '~> 3.2'
@@ -108,7 +108,7 @@ gem 'prometheus_exporter', '~> 2.2', require: false
 gem 'opentelemetry-api', '~> 1.11.0'
 
 group :opentelemetry do
-  gem 'opentelemetry-exporter-otlp', '~> 0.36.0', require: false
+  gem 'opentelemetry-exporter-otlp', '~> 0.37.0', require: false
   gem 'opentelemetry-instrumentation-active_job', '~> 0.13.0', require: false
   gem 'opentelemetry-instrumentation-active_model_serializers', '~> 0.25.0', require: false
   gem 'opentelemetry-instrumentation-concurrent_ruby', '~> 0.25.0', require: false
@@ -235,3 +235,5 @@ gem 'mail', '~> 2.8'
 
 gem 'base58', '~> 0.2.3'
 gem 'prism'
+
+gem 'bloom_fit', '~> 1.2'
